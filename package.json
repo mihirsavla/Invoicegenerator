@@ -1,0 +1,21 @@
+{
+  "name": "invoice-generator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "express": "^4.19.2",
+    "fs": "^0.0.1-security",
+    "mysql2": "^3.11.0",
+    "puppeteer": "^22.15.0",
+    "uuid": "^10.0.0",
+    "xlsx": "^0.18.5"
+  }
+}

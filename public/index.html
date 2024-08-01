@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Craving hubs Invoice Generator</title>
+    <style>
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+        .invoice-section label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        .invoice-section input, .invoice-section select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .product {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+        .product button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Invoice Generator</h2>
+        <div class="invoice-section">
+            <label>Category:</label>
+            <select id="categorySelect" onchange="updateProductSelect()">
+                <option value="">Select a category</option>
+            </select>
+            <label>Product:</label>
+            <select id="productSelect" onchange="updateProductDetails()">
+                <option value="">Select a product</option>
+            </select>
+            <label>MRP:</label>
+            <input type="number" id="productMRP" readonly>
+            <label>Discount (%):</label>
+            <input type="number" id="productDiscount">
+            <label>Quantity:</label>
+            <input type="number" id="productQuantity" value="1">
+        </div>
+        <button onclick="addProduct()">Add Product</button>
+        <div id="productList"></div>
+        <div class="summary" id="invoiceSummary"></div>
+        <div class="button-container">
+            <button class="download-button" onclick="downloadPDF()">Download PDF</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        const productCatalog = {
+    "Burgers": {
+        "Veggie Delight": 79,
+        "Cheese Blast Burger": 99,
+        "Craving Special burger": 149,
+        "Jain Delight burger": 79,
+        "Jaine Cheese Blast burger": 99,
+        "Jain Craving Special burger": 199
+    },
+    "Breads": {
+        "Bread Butter": 30,
+        "Bread butter Grill": 40,
+        "Bread Chutney": 40,
+        "Bread Chutney Grill": 50,
+        "Bread Jam": 40,
+        "Bread Jam Grill": 50
+    },
+    "Sandwiches": {
+        "Sandwich": 69,
+        "Cheese Sandwich": 79,
+        "Veg Cheese Grill": 159,
+        "Pahadi Grill": 169,
+        "Craving Special Sandwich": 210,
+        "Jain Sandwich": 65,
+        "Jain Cheese Sandwich": 79,
+        "Jain Cheese Grill": 180,
+        "Jain Pahadi Grill": 189,
+        "Jain Craving Special grill": 229
+    },
+    "Fries": {
+        "Salted Masala Fries": 59,
+        "Peri Peri Fries": 69,
+        "Cheesy Fries": 79,
+        "Saucy Fries": 89,
+        "Jain Fries": 89,
+        "Jain Peri Peri Fries": 99,
+        "Jain Cheesy Fries": 129,
+        "Jain Saucy Fries": 129
+    },
+    "Garlic Bread": {
+        "Garlic Bread": 59,
+        "Cheesy Garlic Bread": 79,
+        "Saucy Garlic Bread": 89,
+        "Cheese Chilli Garlic Bread": 99
+    },
+    "Pasta": {
+        "Red sauce pasta": 159,
+        "White sauce pasta": 159,
+        "Jain Red sauce pasta": 169,
+        "Jain White sauce pasta": 169
+    },
+    "Momos": {
+        "Veg Momos(half)": 69,
+        "Veg Momos(full)": 99,
+        "Paneer momos(half)": 89,
+        "Paneer momos(full)": 119,
+        "Cheese corn momos(half)": 79,
+        "Cheese corn momos(full)": 119,
+        "Veg Fried momos(half)": 69,
+        "Veg Fried momos(full)": 99,
+        "Paneer fried momos(half)": 89,
+        "Paneer fried momos(full)": 119,
+        "Fried Cheese corn momos(half)": 89,
+        "Fried Cheese corn momos(full)": 129,
+        "Jain momos(half)": 69,
+        "Jain momos(full)": 99,
+        "Jain paneer momos(half)": 89,
+        "Jain paneer momos(full)": 119,
+        "Jain Cheese corn momos(half)": 79,
+        "Jain cheese corn momos(full)": 119,
+        "Jain fried momos(half)": 99,
+        "Jain fried momos(full)": 129,
+        "Jain Fried paneer momos(half)": 99,
+        "Jain fried paneer momos(full)": 129,
+        "Jain fried cheese corn momos(half)": 99,
+        "Jain fried cheese corn momos(full)": 129
+    },
+    "Mojitos": {
+        "Tropical watermelon mojito": 59,
+        "Diablo mojito": 59,
+        "Bubblegum fizz": 59,
+        "Blue bubblegum": 59,
+        "Pink strawberry": 59,
+        "Twisty lime": 59,
+        "Berry rush": 59,
+        "Rosey blue": 59
+    },
+    "Shakes": {
+        "Chocolate Shake": 79,
+        "Kitkat delight shake": 99,
+        "Oreo shake": 79,
+        "Oreo overload shake": 99,
+        "Bubblegum Shake": 79,
+        "Blue bubblegum Shake": 79,
+        "Roseberry delight shake": 79,
+        "Berry fusion shake": 79,
+        "Classic Cold Coffee": 59,
+        "Mocha magic Shake": 79
+    },
+    "Bubble Tea": {
+        "Tropical watermelon bubble tea": 99,
+        "Diablo bubble tea": 99,
+        "Bubblegum fizz bubble tea": 99,
+        "Blue bubblegum bubble tea": 99,
+        "Strawberry bubble tea": 99,
+        "Berry rush bubble tea": 99,
+        "Rosey Blue Bubble tea": 99,
+        "Lime Twist bubble tea": 99,
+        "Chocolate Bubble tea": 129,
+        "Kitkat bubble tea": 129,
+        "Oreo bubble tea": 129,
+        "Oreo overload bubble tea": 129,
+        "Bubblegum bubble tea": 129,
+        "Blue bubblegum bubble tea": 129,
+        "Roseberry delight bubble tea": 129,
+        "Berry Fusion bubble tea": 129,
+        "Coffee bubble tea": 129,
+        "Mocha Bubble tea": 129
+    },
+    "Extras": {
+        "Mayo": 30,
+        "Mint mayo": 30,
+        "Chipotley": 30,
+        "Ketchup": 2
+    }
+};
+
+        function populateCategorySelect() {
+            const categorySelect = document.getElementById('categorySelect');
+            for (const category in productCatalog) {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categorySelect.appendChild(option);
+            }
+        }
+
+        function updateProductSelect() {
+            const categorySelect = document.getElementById('categorySelect');
+            const productSelect = document.getElementById('productSelect');
+            const selectedCategory = categorySelect.value;
+
+            productSelect.innerHTML = '<option value="">Select a product</option>';
+
+            if (selectedCategory) {
+                for (const product in productCatalog[selectedCategory]) {
+                    const option = document.createElement('option');
+                    option.value = product;
+                    option.textContent = product;
+                    productSelect.appendChild(option);
+                }
+            }
+        }
+
+        function updateProductDetails() {
+            const categorySelect = document.getElementById('categorySelect');
+            const productSelect = document.getElementById('productSelect');
+            const mrpInput = document.getElementById('productMRP');
+
+            const selectedCategory = categorySelect.value;
+            const selectedProduct = productSelect.value;
+
+            if (selectedCategory && selectedProduct) {
+                const price = productCatalog[selectedCategory][selectedProduct];
+                mrpInput.value = price;
+            } else {
+                mrpInput.value = '';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', populateCategorySelect);
+
+        let products = [];
+    
+        function addProduct() {
+            const productSelect = document.getElementById('productSelect');
+            const name = productSelect.value;
+            const mrp = parseFloat(document.getElementById('productMRP').value);
+            const discount = parseFloat(document.getElementById('productDiscount').value);
+            const quantity = parseInt(document.getElementById('productQuantity').value, 10);
+    
+            if (!name || isNaN(mrp) || isNaN(discount) || isNaN(quantity)) {
+                alert('Please enter valid product details.');
+                return;
+            }
+    
+            const discountedPrice = mrp - (mrp * discount / 100);
+            const totalPrice = discountedPrice * quantity;
+    
+            fetch('/add-product', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, mrp, discount, quantity, discountedPrice, totalPrice })
+            }).then(response => response.text())
+              .then(message => {
+                  console.log(message);
+                  products.push({ name, mrp, discount, quantity, discountedPrice, totalPrice });
+                  updateProductList();
+              }).catch(error => console.error('Error:', error));
+        }
+    
+        function updateProductList() {
+            const productList = document.getElementById('productList');
+            productList.innerHTML = '';
+    
+            let totalAmount = 0;
+    
+            products.forEach((product, index) => {
+                totalAmount += product.totalPrice;
+    
+                const productElement = document.createElement('div');
+                productElement.className = 'product';
+                productElement.innerHTML = `
+                    <div>${index + 1}. ${product.name}</div>
+                    <div>MRP: ${product.mrp}</div>
+                    <div>Discount: ${product.discount}%</div>
+                    <div>Quantity: ${product.quantity}</div>
+                    <div>Total: ${product.totalPrice.toFixed(2)}</div>
+                    <button onclick="removeProduct(${index})">Remove</button>
+                `;
+                productList.appendChild(productElement);
+            });
+    
+            document.getElementById('invoiceSummary').innerHTML = `<strong>Total Amount: ${totalAmount.toFixed(2)}</strong>`;
+        }
+    
+        function removeProduct(index) {
+            fetch('/remove-product', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ index })
+            }).then(response => response.text())
+              .then(message => {
+                  console.log(message);
+                  products.splice(index, 1);
+                  updateProductList();
+              }).catch(error => console.error('Error:', error));
+        }
+    
+        function downloadPDF() {
+            if (window.jspdf && window.jspdf.jsPDF) {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+    
+                doc.setFontSize(16);
+                doc.text("Invoice", 14, 20);
+    
+                let y = 30;
+                products.forEach((product, index) => {
+                    doc.setFontSize(12);
+                    doc.text(`${index + 1}. ${product.name}`, 14, y);
+                    y += 6;
+                    doc.text(`MRP: ${product.mrp} - Discount: ${product.discount}% - Quantity: ${product.quantity} - Total: ${product.totalPrice.toFixed(2)}`, 14, y);
+                    y += 6;
+                });
+    
+                doc.text(`Total Amount: ${products.reduce((sum, p) => sum + p.totalPrice, 0).toFixed(2)}`, 14, y + 10);
+    
+                doc.save('invoice.pdf');
+            } else {
+                console.error('jsPDF library not loaded');
+            }
+        }
+    </script>
+</body>
+</html>
