@@ -53,12 +53,17 @@
             <label>MRP:</label>
             <input type="number" id="productMRP" readonly>
             <label>Discount (%):</label>
-            <input type="number" id="productDiscount">
+            <input type="number" id="productDiscount" value="0">
             <label>Quantity:</label>
             <input type="number" id="productQuantity" value="1">
         </div>
         <button onclick="addProduct()">Add Product</button>
+
         <div id="productList"></div>
+        <div class="invoice-section">
+            <label>Full Bill Discount (%):</label>
+            <input type="number" id="fullBillDiscount" value="0"> <!-- New input for full bill discount -->
+        </div>
         <div class="summary" id="invoiceSummary"></div>
         <div class="button-container">
             <button class="download-button" onclick="downloadPDF()">Download PDF</button>
@@ -107,10 +112,9 @@
         "Jain Saucy Fries": 129
     },
     "Garlic Bread": {
-        "Garlic Bread": 59,
-        "Cheesy Garlic Bread": 79,
-        "Saucy Garlic Bread": 89,
-        "Cheese Chilli Garlic Bread": 99
+        "Garlic Bread": 79,
+        "Cheesy Garlic Bread": 99,
+        "Saucy Garlic Bread": 109
     },
     "Pasta": {
         "Red sauce pasta": 159,
@@ -125,24 +129,24 @@
         "Paneer momos(full)": 119,
         "Cheese corn momos(half)": 79,
         "Cheese corn momos(full)": 119,
-        "Veg Fried momos(half)": 69,
-        "Veg Fried momos(full)": 99,
-        "Paneer fried momos(half)": 89,
-        "Paneer fried momos(full)": 119,
-        "Fried Cheese corn momos(half)": 89,
+        "Veg Fried momos(half)": 79,
+        "Veg Fried momos(full)": 109,
+        "Paneer fried momos(half)": 99,
+        "Paneer fried momos(full)": 129,
+        "Fried Cheese corn momos(half)": 99,
         "Fried Cheese corn momos(full)": 129,
-        "Jain momos(half)": 69,
-        "Jain momos(full)": 99,
-        "Jain paneer momos(half)": 89,
-        "Jain paneer momos(full)": 119,
-        "Jain Cheese corn momos(half)": 79,
-        "Jain cheese corn momos(full)": 119,
-        "Jain fried momos(half)": 99,
-        "Jain fried momos(full)": 129,
-        "Jain Fried paneer momos(half)": 99,
-        "Jain fried paneer momos(full)": 129,
-        "Jain fried cheese corn momos(half)": 99,
-        "Jain fried cheese corn momos(full)": 129
+        "Jain momos(half)": 79,
+        "Jain momos(full)": 109,
+        "Jain paneer momos(half)": 99,
+        "Jain paneer momos(full)": 129,
+        "Jain Cheese corn momos(half)": 89,
+        "Jain cheese corn momos(full)": 129,
+        "Jain fried momos(half)": 109,
+        "Jain fried momos(full)": 139,
+        "Jain Fried paneer momos(half)": 109,
+        "Jain fried paneer momos(full)": 139,
+        "Jain fried cheese corn momos(half)": 109,
+        "Jain fried cheese corn momos(full)": 139
     },
     "Mojitos": {
         "Tropical watermelon mojito": 59,
@@ -170,7 +174,7 @@
         "Tropical watermelon bubble tea": 99,
         "Diablo bubble tea": 99,
         "Bubblegum fizz bubble tea": 99,
-        "Blue bubblegum bubble tea": 99,
+        "Blue bubblegum bubble tea(soda)": 99,
         "Strawberry bubble tea": 99,
         "Berry rush bubble tea": 99,
         "Rosey Blue Bubble tea": 99,
@@ -290,7 +294,14 @@
                 productList.appendChild(productElement);
             });
     
-            document.getElementById('invoiceSummary').innerHTML = `<strong>Total Amount: ${totalAmount.toFixed(2)}</strong>`;
+            const fullBillDiscount = parseFloat(document.getElementById('fullBillDiscount').value) || 0; // Get full bill discount value
+            const discountedTotalAmount = totalAmount - (totalAmount * fullBillDiscount / 100); // Apply full bill discount
+
+            document.getElementById('invoiceSummary').innerHTML = `
+                <strong>Total Amount: ${totalAmount.toFixed(2)}</strong><br>
+                <strong>Full Bill Discount: ${fullBillDiscount}%</strong><br>
+                <strong>Final Amount after Discount: ${discountedTotalAmount.toFixed(2)}</strong>
+            `;
         }
     
         function removeProduct(index) {
@@ -322,9 +333,15 @@
                     doc.text(`MRP: ${product.mrp} - Discount: ${product.discount}% - Quantity: ${product.quantity} - Total: ${product.totalPrice.toFixed(2)}`, 14, y);
                     y += 6;
                 });
+                const totalAmount = products.reduce((sum, p) => sum + p.totalPrice, 0);
+                const fullBillDiscount = parseFloat(document.getElementById('fullBillDiscount').value) || 0; // Get full bill discount value
+                const discountedTotalAmount = totalAmount - (totalAmount * fullBillDiscount / 100); // Apply full bill discount
+
     
                 doc.text(`Total Amount: ${products.reduce((sum, p) => sum + p.totalPrice, 0).toFixed(2)}`, 14, y + 10);
-    
+                doc.text(`Full Bill Discount: ${fullBillDiscount}%`, 14, y + 16);
+                doc.text(`Final Amount after Discount: ${discountedTotalAmount.toFixed(2)}`, 14, y + 22);
+
                 doc.save('invoice.pdf');
             } else {
                 console.error('jsPDF library not loaded');
